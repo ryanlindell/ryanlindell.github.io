@@ -1,29 +1,21 @@
 # Ryan Lindell - Portfolio
 
-Developer portfolio built with **Next.js** and **React**.
+Static developer portfolio: **HTML**, **CSS**, and **JavaScript** (no build step).
 
-## Development
+## Local preview
 
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Build & Deploy
+Open `index.html` in your browser, or serve the folder with any static file server, for example:
 
 ```bash
-npm run build
-npm start
+npx --yes serve .
 ```
 
-### Deploy on Vercel
+## Deploy (GitHub Pages)
 
-Vercel auto-detects Next.js. Import this repo at [vercel.com](https://vercel.com) and deploy.
+Push to the default branch of a `username.github.io` repository (or enable Pages for this repo). The site entry point is `index.html` at the repository root.
 
-**Custom domain (ryanlindell.com):** Add the domain in Project Settings → Domains, then update DNS to point to `cname.vercel-dns.com`.
+**Custom domain:** The `CNAME` file is included for `ryanlindell.com`. Configure the domain in the repository **Settings → Pages → Custom domain** if needed.
 
-### GitHub API (live "last updated" times)
+### Projects
 
-Project cards fetch "last updated" from the GitHub API. Without a token you get 60 requests/hour; add `GITHUB_TOKEN` in Vercel (or `.env.local` for dev) for 5,000/hour and access to private repos.
+The projects index (`projects.html`) uses large image cards that link to hand-written pages under `projects/`. Copy `projects/project-template.html` when adding a new write-up, then add a matching `<li>` card on the projects page (with an image in e.g. `mbta/` or `assets/`).

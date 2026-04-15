@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MBTA poster — live Green Line updates, by Ryan Lindell." />
+  <title>MBTA poster · Projects · Ryan Lindell</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="../index.html">Ryan Lindell</a></h1>
+      <p class="tagline">Electrical Engineering · UH Mānoa</p>
+      <nav>
+        <ul>
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../projects.html" aria-current="page">Projects</a></li>
+          <li><a href="../blog.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container container--narrow">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../projects.html">Projects</a>
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        <span class="breadcrumb-current">MBTA poster</span>
+      </nav>
+
+      <header class="page-hero page-hero--compact">
+        <h2 class="page-title">MBTA poster</h2>
+        <p class="page-hero-lead">A wall poster that shows live Green Line train information for the MBTA system.</p>
+      </header>
+
+      <article class="project-detail animate-on-scroll animate-out">
+        <section class="project-detail-section">
+          <h3>Overview</h3>
+          <p>
+            This project combines the PL9823 LED with an ESP32 to display <strong>live updates</strong> of the MBTA Green Line. It used a wall plug as a power source and a buck converter to power the ESP32 and LEDs lots of soldering was used...
+          </p>
+          <p>
+            It was a way to blend real-world transit APIs (or feeds) with a physical, always-visible format: something you glance at on the wall like a sign, not a phone app.
+          </p>
+        </section>
+
+        <section class="project-detail-section">
+          <h3>Tech</h3>
+          <ul class="project-detail-list">
+            <li><strong>Language:</strong> C++</li>
+            <li><strong>Focus:</strong> Data fetch/update pipeline and clear on-screen presentation</li>
+            <li><strong>Domain:</strong> MBTA Green Line only (scoped to keep the build manageable)</li>
+          </ul>
+        </section>
+
+        <section class="project-detail-section project-writeup" id="write-up">
+          <h3>Write-up</h3>
+          <p>
+            This was my first real project with a lot of things, the ESP32, lots of wiring, and the specific type of LED we landed on. Originally this project was for the LUTRON competition at Boston University, but because it took so long it just because a personal project basically. Parker Hursty helped me with some of the soldering and the creation of the wooden frame of the project while I focused on more of the software and hardware choices.
+          </p>
+          <p>
+            The original idea for the project was to use LED strips, but after we couldn't figure out how to make them work we shortly switched to using LEDs. The first LEDs we bought using the money we got from LUTRON were not the right kind, as they couldn't be daisy chained together, so we had to switch to another kind which ended up working - the PL9823 LEDs.
+          </p>
+          <p>
+            Before putting the LEDs on the frame or soldering them, we first tested them on a breadboard, which gave us time to also test our program, so first we made the B line working on a breadboard.
+          </p>
+
+          <figure class="project-writeup-figure">
+            <img
+              src="../mbta/IMG_1973.png"
+              alt="Live tracking of the B line with ESP32 and PL9823 LEDs"
+              width="1600"
+              height="1000"
+              loading="lazy"
+            />
+            <figcaption>Caption: Big progress! I was very very happy for this to work so easily.</figcaption>
+          </figure>
+
+          <p>
+            After that we started soldering the LEDs together. We made sort of an essembly line because we had around 50 LEDs to do total, each of them requiring 4 things to be soldered together.
+          </p>
+
+          <figure class="project-writeup-figure">
+            <img
+              src="../mbta/IMG_2165.png"
+              alt="Live tracking of the B line with ESP32 and PL9823 LEDs"
+              width="1600"
+              height="1000"
+              loading="lazy"
+            />
+            <figcaption>Caption: I made a helping tool where we could solder 4 LEDs at a time</figcaption>
+          </figure>
+
+          <p>
+            After soldering some of the LEDs, we started putting them on the frame
+          </p>
+
+          <div class="project-writeup-two-up" role="group" aria-label="Two related photos">
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../mbta/IMG_2166.png"
+                alt="Project photo 1 — front"
+                width="1200"
+                height="800"
+                loading="lazy"
+              />
+              <figcaption>Left: Front side of the project</figcaption>
+            </figure>
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../mbta/IMG_2167.png"
+                alt="Project photo 2 — back"
+                width="1200"
+                height="800"
+                loading="lazy"
+              />
+              <figcaption>Right: Back wiring of the project</figcaption>
+            </figure>
+          </div>
+
+          <p>
+            Finally after many hours of soldering we got all of the LEDs in! Next we worked on connecting all the LEDs to ground and power, which took a lot longer because there were wires and not just soldered directly onto the next LED
+          </p>
+
+          <div class="project-writeup-two-up" role="group" aria-label="Two related photos">
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../mbta/IMG_2234.png"
+                alt="Project photo 1 — front"
+                width="1200"
+                height="800"
+                loading="lazy"
+              />
+              <figcaption>Left: Front side of the project</figcaption>
+            </figure>
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../mbta/IMG_2257.png"
+                alt="Project photo 2 — back"
+                width="1200"
+                height="800"
+                loading="lazy"
+              />
+              <figcaption>Right: Back wiring of the project</figcaption>
+            </figure>
+          </div>
+
+          <p>
+            Next was finding some way to power the whole thing - Which we used a 2A power brick and a buck converter to lower the voltage so that the ESP32 could have 5v instead of 12v. Honestly I am not quite sure how this worked as I thougth the current draw from all of the LEDs would be more than the ESP32 could make but just powering all the LEDS with the ESP32 worked out fine and everything turned on. There was a lot of troubleshooting with bad soldering joints and we realized that if you touched the poster weird it would flicker but eventually we smoothed out a lot of the bad soldering and the project got a lot more stable.
+          </p>
+          
+          <figure class="project-writeup-figure">
+            <img
+              src="../mbta/IMG_2260.png"
+              alt="Wire mess"
+              width="1600"
+              height="1000"
+              loading="lazy"
+            />
+            <figcaption>Caption: final backside with all electronics in</figcaption>
+          </figure>
+          
+          <p>
+            She lights! Unfortunately I don't have pictures of it working but we did eventually get it to work as we did in the breadboard only for a short while.
+          </p>
+
+          <figure class="project-writeup-figure">
+            <img
+              src="../mbta/IMG_2261.png"
+              alt="Live tracking of the B line with ESP32 and PL9823 LEDs"
+              width="1600"
+              height="1000"
+              loading="lazy"
+            />
+            <figcaption>Caption: final (definately) working project</figcaption>
+          </figure>
+
+          <p>
+            I wish we had more time to polish this project and figure out more of the bugs, like making a switch for different direction of travels or expanding it to cover the whole MBTA train map but we were already past the 1 month timeline of LUTRON by about another month so this project was lost to time and now rests with Parker.
+          </p>
+        </section>
+
+        <section class="project-detail-section">
+          <h3>Links</h3>
+          <p>
+            <a href="https://github.com/ryanlindell/MBTA-poster" target="_blank" rel="noopener noreferrer" class="project-inline-link"><i class="fab fa-github" aria-hidden="true"></i> Code on GitHub</a>
+            <span class="project-link-note"></span>
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ryan Lindell. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/main.js" defer></script>
+</body>
+</html>
