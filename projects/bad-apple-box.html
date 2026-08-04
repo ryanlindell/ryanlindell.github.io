@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Bad Apple Box — an ESP32 driving an OLED display to play the Bad Apple!! video." />
+  <title>Bad Apple Box · Projects · Ryan Lindell</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="../index.html">Ryan Lindell</a></h1>
+      <p class="tagline">Electrical Engineering · UH Mānoa</p>
+      <nav>
+        <ul>
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../projects.html" aria-current="page">Projects</a></li>
+          <li><a href="../blog.html">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container container--narrow">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../projects.html">Projects</a>
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        <span class="breadcrumb-current">Bad Apple Box</span>
+      </nav>
+
+      <header class="page-hero page-hero--compact">
+        <h2 class="page-title">Bad Apple Box</h2>
+        <p class="page-hero-lead">An ESP32 + OLED build that plays the Bad Apple!! video from Touhou.</p>
+      </header>
+
+      <article class="project-detail animate-on-scroll animate-out">
+        <section class="project-detail-section">
+          <h3>Overview</h3>
+          <p>
+            This project is a fun embedded challenge: take a well-known high-contrast video (“Bad Apple!!”) and get it to play smoothly on a small OLED display using an ESP32.
+          </p>
+          <p>
+            The goal was to explore the full pipeline—preprocessing frames, fitting them to the display, storage/streaming constraints, and keeping playback timing stable on embedded hardware.
+          </p>
+        </section>
+
+        <section class="project-detail-section">
+          <h3>Tech</h3>
+          <ul class="project-detail-list">
+            <li><strong>Microcontroller:</strong> ESP32</li>
+            <li><strong>Display:</strong> OLED</li>
+            <li><strong>Focus:</strong> frame conversion + storage + playback timing</li>
+          </ul>
+        </section>
+
+        <section class="project-detail-section project-writeup" id="write-up">
+          <h3>Write-up</h3>
+
+          <p>
+            Start your narrative here: what inspired the build, what success looked like (“play the video end-to-end without dropped frames”), and what constraints made it interesting.
+          </p>
+          <p>
+            Suggested outline: (1) display + wiring, (2) frame preprocessing method, (3) storage format, (4) playback loop and timing, (5) performance tuning, (6) final result.
+          </p>
+
+          <figure class="project-writeup-figure">
+            <img
+              src="../badapple/IMG_0210.jpg"
+              alt="Bad Apple Box OLED display"
+              width="1600"
+              height="1200"
+              loading="lazy"
+            />
+            <figcaption>OLED playback setup.</figcaption>
+          </figure>
+
+          <figure class="project-writeup-figure">
+            <img
+              src="../badapple/IMG_0217.jpg"
+              alt="Bad Apple Box close-up"
+              width="1600"
+              height="1200"
+              loading="lazy"
+            />
+            <figcaption>Close-up of the display.</figcaption>
+          </figure>
+
+          <div class="project-writeup-two-up" role="group" aria-label="Two related photos">
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../badapple/IMG_0200.jpg"
+                alt="Bad Apple Box photo"
+                width="1600"
+                height="1200"
+                loading="lazy"
+              />
+              <figcaption>Build photo.</figcaption>
+            </figure>
+            <figure class="project-writeup-figure project-writeup-figure--pair">
+              <img
+                src="../badapple/IMG_0204.jpg"
+                alt="Bad Apple Box photo"
+                width="1600"
+                height="1200"
+                loading="lazy"
+              />
+              <figcaption>Build photo.</figcaption>
+            </figure>
+          </div>
+
+          <p>
+            Add as many paragraphs as you want—this section is designed to scale for a full blog post.
+          </p>
+        </section>
+
+        <section class="project-detail-section">
+          <h3>Links</h3>
+          <p>
+            <a href="https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO" target="_blank" rel="noopener noreferrer" class="project-inline-link">
+              <i class="fab fa-github" aria-hidden="true"></i> Code on GitHub
+            </a>
+            <span class="project-link-note">Replace this link when your repo is ready.</span>
+          </p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ryan Lindell. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/main.js" defer></script>
+</body>
+</html>
+

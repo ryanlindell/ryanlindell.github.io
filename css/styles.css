@@ -548,6 +548,23 @@ footer {
   overflow: hidden;
 }
 
+.project-card-link-media--placeholder {
+  display: grid;
+  place-items: center;
+}
+
+.project-card-link-media-placeholder {
+  width: min(240px, 60%);
+  height: min(240px, 60%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.35), transparent 55%),
+    radial-gradient(circle at 70% 65%, rgba(248, 113, 113, 0.25), transparent 60%),
+    linear-gradient(145deg, rgba(148, 163, 184, 0.10), rgba(148, 163, 184, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
 .project-card-link-media img {
   width: 100%;
   height: 100%;
