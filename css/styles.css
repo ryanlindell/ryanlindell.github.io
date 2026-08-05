@@ -721,6 +721,73 @@ footer {
   }
 }
 
+/* Write-up subheadings */
+.project-writeup h4 {
+  color: var(--text-light);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 2.25rem 0 0.85rem;
+}
+
+/* Inline code */
+.project-writeup code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--page-edge);
+  border-radius: 4px;
+  padding: 0.1em 0.38em;
+  color: var(--text-light);
+  overflow-wrap: break-word;
+}
+
+/* Code blocks */
+.project-code {
+  margin: 1.5rem 0 1.75rem;
+}
+
+.project-code pre {
+  background: var(--dark-bg);
+  border: 1px solid var(--page-edge);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.project-code pre code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--text-dark);
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  display: block;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.project-code figcaption {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+  line-height: 1.55;
+}
+
+.project-code figcaption .project-code-file {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--primary-color);
+}
+
+@media (max-width: 640px) {
+  .project-code pre code {
+    font-size: 0.78rem;
+  }
+}
+
 .project-inline-link {
   font-weight: 600;
   display: inline-flex;

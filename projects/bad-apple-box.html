@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Bad Apple Box — an ESP32 driving an OLED display to play the Bad Apple!! video." />
+  <meta name="description" content="Bad Apple Box — fitting all 6,527 frames of the Bad Apple!! video into an ESP32's flash memory with run-length encoding, and playing them back on a 128×32 OLED." />
   <title>Bad Apple Box · Projects · Ryan Lindell</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <link rel="stylesheet" href="../css/styles.css" />
@@ -41,19 +41,31 @@
         <section class="project-detail-section">
           <h3>Overview</h3>
           <p>
-            This project is a fun embedded challenge: take a well-known high-contrast video (“Bad Apple!!”) and get it to play smoothly on a small OLED display using an ESP32.
+            This project is a fun embedded challenge: take a well-known high-contrast video (“Bad Apple!!”) and get it to play on a 128&times;32 OLED display driven by an ESP32.
           </p>
           <p>
-            The goal was to explore the full pipeline—preprocessing frames, fitting them to the display, storage/streaming constraints, and keeping playback timing stable on embedded hardware.
+            The whole thing is really a data problem wearing a video costume. All 6,527 frames have to live in flash memory on the microcontroller itself — there's no SD card, no streaming, no network. Getting 3.19&nbsp;MiB of raw framebuffers down to something that fits, and then unpacking it fast enough to look like motion, is the actual project.
           </p>
         </section>
 
         <section class="project-detail-section">
           <h3>Tech</h3>
           <ul class="project-detail-list">
-            <li><strong>Microcontroller:</strong> ESP32</li>
-            <li><strong>Display:</strong> OLED</li>
-            <li><strong>Focus:</strong> frame conversion + storage + playback timing</li>
+            <li><strong>Microcontroller:</strong> ESP32 (4&nbsp;MB flash) — upgraded from an Arduino Nano</li>
+            <li><strong>Display:</strong> SSD1306 OLED, 128&times;32, driven over I²C at 400&nbsp;kHz</li>
+            <li><strong>Toolchain:</strong> ffmpeg for frame extraction, Python + Pillow for encoding, C++ for playback</li>
+            <li><strong>Focus:</strong> run-length compression and fitting a video into flash</li>
+          </ul>
+        </section>
+
+        <section class="project-detail-section">
+          <h3>By the numbers</h3>
+          <ul class="project-detail-list">
+            <li><strong>Frames:</strong> 6,527</li>
+            <li><strong>Raw framebuffers:</strong> 3,341,824 bytes (~3.19&nbsp;MiB) — 512 bytes per frame</li>
+            <li><strong>After RLE:</strong> 771,686 bytes (~754&nbsp;KiB)</li>
+            <li><strong>Compression:</strong> 4.33&times;, about a 77% reduction</li>
+            <li><strong>Arduino Nano flash:</strong> 32&nbsp;KB — roughly 100&times; too small, even compressed</li>
           </ul>
         </section>
 
@@ -61,69 +73,186 @@
           <h3>Write-up</h3>
 
           <p>
-            Start your narrative here: what inspired the build, what success looked like (“play the video end-to-end without dropped frames”), and what constraints made it interesting.
+            This has been on my mind for a while, since seeing all those crazy videos of people putting Bad Apple on whatever you can think of — especially that one where someone uses Desmos. I have no idea how that's possible. I'm really glad I got to do this project.
           </p>
+
           <p>
-            Suggested outline: (1) display + wiring, (2) frame preprocessing method, (3) storage format, (4) playback loop and timing, (5) performance tuning, (6) final result.
+            The first step was getting the OLED display and all the parts. Luckily for me, UH Mānoa did an event called <strong>Bytes &amp; Bites</strong>, where we got food and free parts to build an OLED time display: the OLED screen I would end up using for Bad Apple, a mini Arduino, and some other non-essential components like a breadboard and cables.
           </p>
 
           <figure class="project-writeup-figure">
             <img
-              src="../badapple/IMG_0210.jpg"
-              alt="Bad Apple Box OLED display"
+              src="../badapple/IMG_0200.jpg"
+              alt="A laser-cut plywood box with finger joints, an OLED display in the front panel showing the time 13:16:23"
               width="1600"
               height="1200"
               loading="lazy"
             />
-            <figcaption>OLED playback setup.</figcaption>
+            <figcaption>The kit built the way it was meant to be built — a laser-cut box that tells you the time. This is the box the project is named after.</figcaption>
           </figure>
+
+          <h4>Getting the video into frames</h4>
+
+          <p>
+            With the hardware sorted, the next thing was getting the Bad Apple video itself — finding it on YouTube, downloading it, then turning it into individual frames. I did this using ffmpeg, which was the easy part — it scales every frame down to the OLED's 128&times;32 resolution and dumps them out as PNGs.
+          </p>
+
+          <p>
+            I don't remember the exact invocation anymore, but it was something along these lines — set a frame rate, scale down to the panel size, and force everything to pure black and white on the way out:
+          </p>
+
+          <figure class="project-code">
+            <pre><code>ffmpeg -i bad_apple.mp4 \
+  -vf "fps=30,scale=128:32,format=gray" \
+  -pix_fmt monob \
+  frames/%05d.png</code></pre>
+            <figcaption>Roughly the frame-extraction step, reconstructed from memory.</figcaption>
+          </figure>
+
+          <p>
+            The hard step was turning those frames into code the OLED could actually display. That was done with a Python program.
+          </p>
+
+          <p>
+            Every frame is 128&times;32, which is 4,096 pixels. Pillow's <code>convert('1')</code> collapses each one down to a single bit — pure black or pure white, no grays in between — and <code>getdata()</code> hands back a flat list of all 4,096 values in reading order.
+          </p>
+
+          <figure class="project-code">
+            <pre><code>def compress_frame_rle(image_path):
+    img = Image.open(image_path).convert('1') # Convert to 1-bit
+    pixels = list(img.getdata()) # Get flat list of 4096 pixels (128x32)</code></pre>
+            <figcaption>From <span class="project-code-file">frames.py</span> — one frame in, a flat pixel list out.</figcaption>
+          </figure>
+
+          <h4>The memory problem</h4>
+
+          <p>
+            The result of this was <code>bad_apple_rle.h</code>, a 4.46&nbsp;MB file — though most of that bulk is just text formatting, since every byte is written out as <code>0x1f,&nbsp;</code> in the source. The actual data is closer to 754&nbsp;KiB. But there's a problem I noticed pretty quickly: the Arduino Nano only has <strong>32&nbsp;KB</strong> of flash memory. The video wasn't close to fitting — it wasn't even in the same order of magnitude. So I needed to upgrade to an <strong>ESP32</strong>, which has 4&nbsp;MB.
+          </p>
 
           <figure class="project-writeup-figure">
             <img
-              src="../badapple/IMG_0217.jpg"
-              alt="Bad Apple Box close-up"
+              src="../badapple/IMG_0204.jpg"
+              alt="An ESP32 development board wired by jumper leads into the opened plywood box, on a cluttered workbench"
               width="1600"
               height="1200"
               loading="lazy"
             />
-            <figcaption>Close-up of the display.</figcaption>
+            <figcaption>Swapping the Nano out for an ESP32 — same box, same OLED, a hundred times the storage.</figcaption>
           </figure>
 
-          <div class="project-writeup-two-up" role="group" aria-label="Two related photos">
+          <p>
+            And even with the upgrade, I still needed a compression algorithm. Each 128&times;32 frame is 4,096 pixels, which packs into 512 bytes. Times 6,527 frames, that's <strong>3.19&nbsp;MiB</strong> of raw framebuffers — technically under 4&nbsp;MB, but with nothing left over for the program itself, and no margin at all. Compression wasn't optional.
+          </p>
+
+          <p>
+            The trick is that Bad Apple is almost entirely large flat shapes. A row of 128 identical pixels doesn't need 128 entries — it needs one entry that says <em>“white, 128 times.”</em> That's run-length encoding, and it's a near-perfect match for this video.
+          </p>
+
+          <p>
+            Each run gets packed into a <strong>single byte</strong>: the top bit stores the color, and the bottom seven store how many pixels long the run is. Seven bits caps a run at 127, which is why the loop cuts a run off once it hits that ceiling.
+          </p>
+
+          <figure class="project-code">
+            <pre><code>for pixel in pixels:
+    # If color matches and count &lt; 127, keep counting
+    if pixel == current_color and count &lt; 127:
+        count += 1
+    else:
+        # Pack color into the highest bit (bit 7), count into bits 0-6
+        color_bit = 0x80 if current_color &gt; 0 else 0x00
+        rle_data.append(color_bit | count)
+
+        current_color = pixel
+        count = 1</code></pre>
+            <figcaption>The encoder loop in <span class="project-code-file">frames.py</span>.</figcaption>
+          </figure>
+
+          <p>
+            Averaged across all 6,527 frames that works out to about <strong>118 bytes per frame</strong>, down from 512 — a 4.33&times; reduction, and the difference between “this fits comfortably” and “this doesn't fit at all.”
+          </p>
+
+          <p>
+            The other half of the file is a lookup table. Since every frame compresses to a different length, the ESP32 has no way to know where frame 4,000 begins unless you write it down, so the encoder tracks a running byte offset as it goes:
+          </p>
+
+          <figure class="project-code">
+            <pre><code># Record where this frame starts so the ESP32 can find it
+frame_offsets.append(total_bytes)
+total_bytes += len(frame_data)</code></pre>
+            <figcaption>Building the frame index — 6,527 offsets, four bytes each.</figcaption>
+          </figure>
+
+          <h4>Playing it back</h4>
+
+          <p>
+            On the ESP32 side, decoding is just the encoder run backwards. Look up where the frame starts and where the next one starts — the difference is how many bytes to read — then walk through them, unpacking each byte back into a color and a run length.
+          </p>
+
+          <figure class="project-code">
+            <pre><code>uint8_t packet = pgm_read_byte(&amp;(bad_apple_rle[offset + i]));
+
+uint8_t color = (packet &amp; 0x80) ? SSD1306_WHITE : SSD1306_BLACK;
+uint8_t count = (packet &amp; 0x7F);
+
+for (uint8_t j = 0; j &lt; count; j++) {
+    int x = pixelIndex % 128;
+    int y = pixelIndex / 128;
+    display.drawPixel(x, y, color);
+    pixelIndex++;
+}</code></pre>
+            <figcaption>The decoder inside <span class="project-code-file">drawRLEFrame()</span>.</figcaption>
+          </figure>
+
+          <p>
+            <code>0x80</code> masks off the color bit and <code>0x7F</code> masks off the count. And since the pixels were stored in reading order, turning a flat index back into screen coordinates is just divide and remainder: <code>% 128</code> gives the column, <code>/ 128</code> gives the row.
+          </p>
+
+          <h4>The result</h4>
+
+          <p>
+            The final result of this, after a lot of tweaking and fixing, was a functional Bad Apple OLED display!!
+          </p>
+
+          <div class="project-writeup-two-up" role="group" aria-label="Two frames of Bad Apple playing on the OLED">
             <figure class="project-writeup-figure project-writeup-figure--pair">
               <img
-                src="../badapple/IMG_0200.jpg"
-                alt="Bad Apple Box photo"
+                src="../badapple/IMG_0210.jpg"
+                alt="The closed plywood box with the OLED showing a small white silhouette from the Bad Apple video"
                 width="1600"
                 height="1200"
                 loading="lazy"
               />
-              <figcaption>Build photo.</figcaption>
+              <figcaption>A single silhouette mid-playback.</figcaption>
             </figure>
             <figure class="project-writeup-figure project-writeup-figure--pair">
               <img
-                src="../badapple/IMG_0204.jpg"
-                alt="Bad Apple Box photo"
+                src="../badapple/IMG_0217.jpg"
+                alt="The same box a few frames later, the OLED showing two silhouetted figures side by side"
                 width="1600"
                 height="1200"
                 loading="lazy"
               />
-              <figcaption>Build photo.</figcaption>
+              <figcaption>A few frames later — two figures, still readable at 128&times;32.</figcaption>
             </figure>
           </div>
 
           <p>
-            Add as many paragraphs as you want—this section is designed to scale for a full blog post.
+            The nice part is that from the outside it's the exact same box from the workshop. Same plywood, same little screen — it just isn't telling the time anymore.
+          </p>
+
+          <p>
+            Once again this was a fun little project that had most of the stuff already done for me, and developing it a bit further into something I wanted to do for a long time was a lot of fun. I hope you like it as much as I do.
           </p>
         </section>
 
         <section class="project-detail-section">
           <h3>Links</h3>
           <p>
-            <a href="https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO" target="_blank" rel="noopener noreferrer" class="project-inline-link">
+            <a href="https://github.com/ryanlindell/badapple-oled" target="_blank" rel="noopener noreferrer" class="project-inline-link">
               <i class="fab fa-github" aria-hidden="true"></i> Code on GitHub
             </a>
-            <span class="project-link-note">Replace this link when your repo is ready.</span>
+            <span class="project-link-note"></span>
           </p>
         </section>
       </article>
