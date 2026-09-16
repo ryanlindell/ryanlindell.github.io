@@ -165,7 +165,6 @@
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: var(--surface); color: var(--ink-muted); font-family: var(--mono); font-size: 0.85rem;
   }
-  #loading[hidden] { display: none; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 20px; font-size: 0.72rem; color: var(--ink-2); border-top: 1px solid var(--hairline); }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .legend .swatch { width: 14px; height: 3px; border-radius: 2px; }
@@ -198,6 +197,7 @@
       <span><span class="swatch" style="background:var(--edge-prereq)"></span> prerequisite</span>
       <span><span class="swatch" style="background:var(--edge-coreq); background-image:repeating-linear-gradient(90deg,var(--edge-coreq) 0 4px,transparent 4px 7px)"></span> corequisite</span>
       <span><span class="swatch" style="background:var(--depth-6)"></span> node shade = depth (darker = more semesters deep)</span>
+      <span><span class="swatch" style="border:1px dashed var(--edge-prereq); background:transparent; height:10px"></span> dashed box = pick one (or N) of these, not all required</span>
     </div>
     <div id="detail"></div>
   </div>
@@ -208,45 +208,72 @@
 (function () {
   "use strict";
 
-  var GRAPH_URL = "prereq_graph.json";
+  // Published as an Artifact, files are served relative to index.html
+  // itself with no parent to go up to -- a "../" path 404s there even
+  // though it's the right relative path for local static-file serving
+  // (where visualizer/ and data/ are real sibling folders on disk). Using
+  // "data/prereq_graph.json" here (matching the Artifact's published path)
+  // means a local copy has to live at visualizer/data/prereq_graph.json too
+  // -- see graph.py, which writes both copies together so they can't drift.
+  var GRAPH_URL = "data/prereq_graph.json";
   var MAX_PER_COLUMN = 9;
 
   var state = { graph: null, index: null, cy: null, focal: null };
 
-  fetch(GRAPH_URL).then(function (r) { return r.json(); }).then(function (graph) {
-    state.graph = graph;
-    state.index = buildIndex(graph);
-    document.getElementById("loading").hidden = true;
-    buildHighlights(graph, state.index);
-    // Open on a genuinely deep, real course rather than an empty shell.
-    var opener = pickOpener(graph);
-    select(opener);
-  }).catch(function (err) {
-    document.getElementById("loading").textContent = "couldn't load prereq_graph.json (" + err + ")";
-  });
+  fetch(GRAPH_URL)
+    .then(function (r) {
+      if (!r.ok) {
+        throw new Error("HTTP " + r.status + " fetching " + GRAPH_URL);
+      }
+      return r.json();
+    })
+    .then(function (graph) {
+      state.graph = graph;
+      state.index = buildIndex(graph);
+      // Not .hidden = true: #loading has its own "display: flex" rule (an
+      // ID selector), which beats the browser's default (non-!important)
+      // "[hidden] { display: none }" UA rule on plain specificity. The
+      // published Artifact papers over this with an auto-injected
+      // "[hidden]{display:none!important}" reset, which is exactly why this
+      // worked there but not when the file is served standalone locally.
+      // An inline style always wins, everywhere, regardless of context.
+      document.getElementById("loading").style.display = "none";
+      buildHighlights(graph, state.index);
+      // Open on a genuinely deep, real course rather than an empty shell.
+      var opener = pickOpener(graph);
+      select(opener);
+    })
+    .catch(function (err) {
+      console.error(err);
+      document.getElementById("loading").textContent =
+        "Couldn't load " + GRAPH_URL + ": " + err.message +
+        ". If you're viewing this from disk (a file:// URL), browsers block " +
+        "loading local JSON that way -- serve this repo with a static server " +
+        "(e.g. `python -m http.server` from the repo root) and open " +
+        "/visualizer/index.html instead.";
+    });
 
+  // Flat prereqOf/unlocks maps -- used for simple counts (search-adjacent
+  // "most direct prereqs"/"most far-reaching" highlights, the ungrouped
+  // unlocks column) where AND/OR structure doesn't matter, only "is there a
+  // relationship at all". The ancestor-chain and coreq rendering use the
+  // real prereq_tree/coreq_tree via computeRequirementUnits instead, since
+  // grouping *does* matter there.
   function buildIndex(graph) {
     var byCode = graph.nodes;
-    var prereqOf = {};   // code -> [codes required BY code]  (incoming prereq edges' source... wait see below)
+    var prereqOf = {};   // code -> [codes required BY code]
     var unlocks = {};    // code -> [codes that require code directly]
-    var coreqs = {};     // code -> [codes coreq'd with code]
-    Object.keys(byCode).forEach(function (c) { prereqOf[c] = []; unlocks[c] = []; coreqs[c] = []; });
+    Object.keys(byCode).forEach(function (c) { prereqOf[c] = []; unlocks[c] = []; });
     graph.edges.forEach(function (e) {
+      if (e.type !== "prereq") return;
       if (!(e.from in prereqOf)) prereqOf[e.from] = [];
       if (!(e.to in prereqOf)) prereqOf[e.to] = [];
       if (!(e.from in unlocks)) unlocks[e.from] = [];
       if (!(e.to in unlocks)) unlocks[e.to] = [];
-      if (e.type === "prereq") {
-        prereqOf[e.to].push(e.from);   // e.to requires e.from
-        unlocks[e.from].push(e.to);    // e.from unlocks e.to
-      } else if (e.type === "coreq") {
-        if (!(e.from in coreqs)) coreqs[e.from] = [];
-        if (!(e.to in coreqs)) coreqs[e.to] = [];
-        coreqs[e.from].push(e.to);
-        coreqs[e.to].push(e.from);
-      }
+      prereqOf[e.to].push(e.from);   // e.to requires e.from
+      unlocks[e.from].push(e.to);    // e.from unlocks e.to
     });
-    return { prereqOf: prereqOf, unlocks: unlocks, coreqs: coreqs };
+    return { prereqOf: prereqOf, unlocks: unlocks };
   }
 
   function pickOpener(graph) {
@@ -384,47 +411,155 @@
   }
 
   var ANCESTOR_CAP = 200;       // total safety cap (worst real case in the catalog is 42)
-  var MAX_PER_LEVEL = 14;
+  var MAX_UNITS_PER_LEVEL = 10;
+
+  function mentionsCourse(node) {
+    if (node.course) return true;
+    if (node.children) return node.children.some(mentionsCourse);
+    return false;
+  }
+
+  function collectAllCourseLeaves(node) {
+    if (node.course) return [node.course];
+    if (node.children) {
+      var out = [];
+      node.children.forEach(function (c) { out = out.concat(collectAllCourseLeaves(c)); });
+      return out;
+    }
+    return [];
+  }
+
+  // Reduces a course's prereq_tree (or coreq_tree) to a flat list of
+  // "requirement units": each unit is either a single required course, or a
+  // real group of alternatives (only one -- or N, for N_OF -- actually
+  // needed), so the graph can draw one clumped node + one arrow for a group
+  // instead of a separate node+arrow per alternative implying all of them
+  // are required. See the escape-hatch handling inside for why this isn't
+  // just "flatten every OR/N_OF subtree".
+  function computeRequirementUnits(code, treeField) {
+    var n = state.graph.nodes[code];
+    if (!n || !n[treeField]) return [];
+    var units = [];
+    function walk(node) {
+      if (node.course) {
+        units.push({ type: "single", codes: [node.course] });
+        return;
+      }
+      if (node.type) {
+        return; // consent/standing/major_restriction/unparsed -- not a course
+      }
+      if (node.op === "AND") {
+        (node.children || []).forEach(walk);
+        return;
+      }
+      if (node.op === "OR" || node.op === "N_OF") {
+        // "X and either Y or Z; or consent" is OR[AND(X, OR(Y,Z)), consent]
+        // at the top -- naively flattening every course under an OR into
+        // one group would wrongly clump X in with Y/Z (found via ECE 342
+        // showing "pick 1 of {ECE 315, MATH 244, MATH 253A}" when only the
+        // MATH pair are real alternatives). "or consent" is a pure escape
+        // hatch, not a real alternative course path, so when exactly one
+        // child actually mentions a course, that child IS the real
+        // requirement -- recurse into it directly instead of grouping.
+        var children = node.children || [];
+        var courseBearing = children.filter(mentionsCourse);
+        if (courseBearing.length === 0) return;
+        if (courseBearing.length === 1) {
+          walk(courseBearing[0]);
+          return;
+        }
+        // Multiple genuine alternative paths -- clump them into one "pick
+        // one/N" group. When every alternative is a plain course (the
+        // common case, "MATH 244 or MATH 253A") the group is exact. When
+        // some alternative is itself a whole subtree -- usually a
+        // comma-list precedence artifact from Stage 4 (e.g. BIOL 171's
+        // "(A, B, C, D, or E) or concurrent" mis-nests as OR[AND(A,B,C,D),
+        // E] -- flatten to that subtree's full course set rather than
+        // walking it as if separately required: that would claim you need
+        // ALL of A-D, which is worse than the imprecision of over-grouping.
+        var codes = [];
+        courseBearing.forEach(function (c) {
+          if (c.course) { codes.push(c.course); return; }
+          codes = codes.concat(collectAllCourseLeaves(c));
+        });
+        codes = codes.filter(function (c, i, arr) { return arr.indexOf(c) === i; });
+        if (codes.length) {
+          units.push({ type: node.op === "N_OF" ? "nof" : "group", n: node.n, codes: codes });
+        }
+      }
+    }
+    walk(n[treeField]);
+    return units;
+  }
 
   // The *entire* prerequisite chain, not just one hop -- a language sequence
   // like KOR 101 -> 102 -> ... -> 496 should render as the full series of
   // courses, not just KOR 496's immediate prereq. BFS backward through
-  // prereq edges, one column per hop-distance from the focal course.
+  // prereq requirement units (not the flat edge list, which can't tell a
+  // real alternative-group apart from separately-required courses), one
+  // column per hop-distance from the focal course.
   // (Unlocks go the other way and are NOT expanded like this -- a foundational
   // course like MATH 161 transitively unlocks 900+ courses, so that side
   // stays immediate-neighbors-only; see idx.unlocks usage below.)
-  function computeAncestorChain(focal, idx) {
+  function computeAncestorChain(focal) {
     var level = {};
     level[focal] = 0;
+    var levelUnits = {};
     var frontier = [focal];
     var lvl = 0;
     var truncated = false;
-    while (frontier.length && Object.keys(level).length < ANCESTOR_CAP) {
+    var placedCount = 1;
+
+    while (frontier.length && placedCount < ANCESTOR_CAP) {
       lvl++;
       var next = [];
-      frontier.forEach(function (code) {
-        (idx.prereqOf[code] || []).forEach(function (p) {
-          if (!(p in level)) {
-            if (Object.keys(level).length >= ANCESTOR_CAP) { truncated = true; return; }
-            level[p] = lvl;
-            next.push(p);
-          }
+      var unitsThisLevel = [];
+      frontier.forEach(function (targetCode) {
+        computeRequirementUnits(targetCode, "prereq_tree").forEach(function (unit) {
+          // Already satisfied via a path reached at an earlier/other level
+          // -- skip rather than draw a duplicate or a partial group.
+          var alreadyPlaced = unit.codes.some(function (c) { return c in level; });
+          if (alreadyPlaced) return;
+          if (placedCount + unit.codes.length > ANCESTOR_CAP) { truncated = true; return; }
+          unit.codes.forEach(function (c) { level[c] = lvl; next.push(c); placedCount++; });
+          unitsThisLevel.push({ type: unit.type, n: unit.n, codes: unit.codes.slice(), target: targetCode });
         });
       });
+      levelUnits[lvl] = unitsThisLevel;
       frontier = next;
     }
-    var byLevel = {};
-    Object.keys(level).forEach(function (code) {
-      var l = level[code];
-      if (l === 0) return;
-      (byLevel[l] = byLevel[l] || []).push(code);
-    });
-    // lvl over-counts by one whenever the last expansion finds nothing new
-    // (the while-condition isn't checked until after lvl is incremented) --
-    // report the highest level that actually has a course in it.
+
     var realMaxLevel = 0;
-    Object.keys(byLevel).forEach(function (l) { realMaxLevel = Math.max(realMaxLevel, Number(l)); });
-    return { byLevel: byLevel, maxLevel: realMaxLevel, allCodes: Object.keys(level), truncated: truncated };
+    Object.keys(levelUnits).forEach(function (l) { if (levelUnits[l].length) realMaxLevel = Math.max(realMaxLevel, Number(l)); });
+    return { levelUnits: levelUnits, maxLevel: realMaxLevel, allCodes: Object.keys(level), truncated: truncated };
+  }
+
+  // A plain node's nominal style "height" (below) is 34, but Cytoscape's
+  // "padding" visibly inflates the painted shape by 2x its value (it's not
+  // just an invisible hit-box), and every node also gets a 1-2px border --
+  // the real rendered height is consistently ~57-58px, confirmed by
+  // directly inspecting boundingBox() on real Cytoscape instances across
+  // many real courses. ROW_H matches that measured reality, not the
+  // nominal style value.
+  //
+  // A previous version of this tried to correct positions post-hoc by
+  // reading each node's real boundingBox() back from Cytoscape after
+  // construction. That measurement was reliable for plain leaf nodes, but
+  // NOT for a compound parent's own boundingBox(): it sometimes reported a
+  // stale pre-move size, and its "extra" size over its members' span
+  // varied wildly with member count (10px for a 10-member group vs ~38px
+  // for a 2-member one on real data, which shouldn't happen since a
+  // label's height doesn't scale with how many members it has). Rather
+  // than chase that further, GROUP_CHROME below is a fixed, verified
+  // allowance for that same padding+label overhead, computed once up
+  // front like everything else -- no post-render measurement or
+  // correction pass needed at all.
+  var ROW_H = 58, INTRA_GROUP_GAP = 10, UNIT_GAP = 24;
+  var GROUP_CHROME = 40;  // extra room reserved above/below a group's member stack for its own padding + top label
+
+  function unitHeight(u) {
+    var membersH = u.codes.length * ROW_H + (u.codes.length - 1) * INTRA_GROUP_GAP;
+    return u.type === "single" ? membersH : membersH + GROUP_CHROME;
   }
 
   function renderGraph(focal) {
@@ -432,55 +567,76 @@
     var idx = state.index;
     var t = tokens();
 
-    var chain = computeAncestorChain(focal, idx);
+    var chain = computeAncestorChain(focal);
     var unlocks = capped(idx.unlocks[focal] || []);
-    var coreqs = (idx.coreqs[focal] || []).slice(0, MAX_PER_COLUMN);
+    var coreqUnits = computeRequirementUnits(focal, "coreq_tree");
 
     var els = [];
     var placed = {};   // code -> true, only for nodes actually drawn (not "+more" stubs)
-    var colWidth = 220, rowHeight = 50;
+    var colWidth = 240, rowHeight = ROW_H + UNIT_GAP;
     var unlockX = colWidth * (chain.maxLevel + 1);
+    var groupSeq = 0;
 
-    function addNode(code, x, y, isFocal) {
+    function addNode(code, x, y, opts) {
+      opts = opts || {};
       var n = nodes[code] || { title: "(not in dataset)", in_catalog: false };
       placed[code] = true;
-      els.push({
-        data: { id: code, label: code, title: n.title || "", depth: n.depth, status: n.depth_status, inCatalog: !!n.in_catalog, focal: !!isFocal },
-        position: { x: x, y: y }
-      });
+      var data = { id: code, label: code, title: n.title || "", depth: n.depth, status: n.depth_status, inCatalog: !!n.in_catalog, focal: !!opts.isFocal };
+      if (opts.parent) data.parent = opts.parent;
+      els.push({ data: data, position: { x: x, y: y } });
     }
 
-    addNode(focal, 0, 0, true);
+    // Lays out a list of requirement units in a vertical column centered on
+    // yCenter at horizontal position x. A "group"/"nof" unit becomes a
+    // compound parent node (a dashed bounding box) containing its member
+    // courses as children, with ONE edge from the group into its target --
+    // "pick one (or N) of these", not "all of these are separately
+    // required". Returns the total pixel height the column used.
+    function layoutUnitColumn(units, x, yCenter, kind) {
+      var shown = units.slice(0, MAX_UNITS_PER_LEVEL);
+      var extra = units.length - shown.length;
+      var totalHeight = shown.reduce(function (sum, u) { return sum + unitHeight(u); }, 0)
+        + Math.max(0, shown.length - 1) * UNIT_GAP;
+      var cursorY = yCenter - totalHeight / 2;
+
+      shown.forEach(function (u) {
+        var h = unitHeight(u);
+        if (u.type === "single") {
+          var code = u.codes[0];
+          addNode(code, x, cursorY + h / 2);
+          els.push({ data: { id: code + "->" + u.target + ":" + kind, source: code, target: u.target, kind: kind } });
+        } else {
+          var gid = "grp:" + (groupSeq++);
+          var label = u.type === "nof" ? (u.n + " of " + u.codes.length) : "1 of " + u.codes.length;
+          els.push({ data: { id: gid, label: label, isGroup: true, groupKind: kind } });
+          var membersTop = cursorY + GROUP_CHROME / 2;
+          u.codes.forEach(function (code, i) {
+            addNode(code, x, membersTop + i * (ROW_H + INTRA_GROUP_GAP) + ROW_H / 2, { parent: gid });
+          });
+          els.push({ data: { id: gid + "->" + u.target, source: gid, target: u.target, kind: kind } });
+        }
+        cursorY += h + UNIT_GAP;
+      });
+
+      if (extra > 0) {
+        els.push({ data: { id: "__more_" + kind + "_" + x, label: "+" + extra + " more", isMore: true }, position: { x: x, y: cursorY + ROW_H / 2 } });
+      }
+      return totalHeight;
+    }
+
+    addNode(focal, 0, 0, { isFocal: true });
 
     for (var l = 1; l <= chain.maxLevel; l++) {
-      var atLevel = (chain.byLevel[l] || []).sort();
-      var shown = atLevel.slice(0, MAX_PER_LEVEL);
-      var extra = atLevel.length - shown.length;
-      var x = -colWidth * l;
-      shown.forEach(function (c, i) { addNode(c, x, (i - (shown.length - 1) / 2) * rowHeight); });
-      if (extra > 0) {
-        els.push({ data: { id: "__more_L" + l, label: "+" + extra + " more", isMore: true }, position: { x: x, y: (shown.length / 2 + 0.7) * rowHeight } });
-      }
+      layoutUnitColumn(chain.levelUnits[l] || [], -colWidth * l, 0, "prereq");
     }
 
+    if (coreqUnits.length) layoutUnitColumn(coreqUnits, 0, 120, "coreq");
+
     unlocks.shown.forEach(function (c, i) { addNode(c, unlockX, (i - (unlocks.shown.length - 1) / 2) * rowHeight); });
-    coreqs.forEach(function (c, i) { addNode(c, 0, (i + 1) * rowHeight + (unlocks.shown.length ? unlocks.shown.length * rowHeight / 2 : rowHeight)); });
-
-    if (unlocks.extra > 0) els.push({ data: { id: "__more_unlock", label: "+" + unlocks.extra + " more", isMore: true }, position: { x: unlockX, y: (unlocks.shown.length / 2 + 0.7) * rowHeight } });
-
-    // Edges: every prereq/coreq relationship in the full dataset where BOTH
-    // endpoints ended up placed -- correct regardless of how levels were
-    // assigned (a node's shortest path can skip levels relative to some of
-    // its other real edges, so deriving edges from level-adjacency alone
-    // would silently miss real relationships).
-    var edgeIds = {};
-    state.graph.edges.forEach(function (e) {
-      if (!placed[e.from] || !placed[e.to]) return;
-      var id = e.from + "->" + e.to + ":" + e.type;
-      if (edgeIds[id]) return;
-      edgeIds[id] = true;
-      els.push({ data: { id: id, source: e.from, target: e.to, kind: e.type } });
-    });
+    if (unlocks.extra > 0) {
+      els.push({ data: { id: "__more_unlock", label: "+" + unlocks.extra + " more", isMore: true }, position: { x: unlockX, y: (unlocks.shown.length / 2 + 0.7) * rowHeight } });
+    }
+    unlocks.shown.forEach(function (c) { els.push({ data: { id: focal + "->" + c, source: focal, target: c, kind: "prereq" } }); });
 
     if (state.cy) state.cy.destroy();
     state.cy = cytoscape({
@@ -490,7 +646,13 @@
       userZoomingEnabled: true, userPanningEnabled: true, boxSelectionEnabled: false,
       style: [
         { selector: "node", style: {
-          "shape": "round-rectangle", "width": "label", "height": 34, "padding": "10px",
+          // "width": "label" is deprecated in this Cytoscape version (logs a
+          // warning but silently produces zero-width/overlapping nodes) --
+          // compute an explicit width from the label length instead, same
+          // pattern as the background-color function below.
+          "shape": "round-rectangle",
+          "width": function (ele) { return Math.max(50, String(ele.data("label") || "").length * 8 + 24); },
+          "height": 34, "padding": "10px",
           "background-color": function (ele) { return depthColor(t, ele.data("depth"), ele.data("inCatalog")); },
           "label": "data(label)", "color": t.ink, "font-family": "IBM Plex Mono, monospace",
           "font-size": 12, "font-weight": 600, "text-valign": "center", "text-halign": "center",
@@ -499,11 +661,25 @@
         { selector: "node[?focal]", style: { "background-color": t.accent, "color": t.accentInk, "border-width": 2, "border-color": t.accent, "font-weight": 700 } },
         { selector: "node[status = 'cycle']", style: { "border-width": 2, "border-color": t.critical } },
         { selector: "node[status = 'unresolved_prereq']", style: { "border-style": "dashed", "border-width": 2, "border-color": t.warning } },
+        // Cytoscape selector syntax: falsy/absent data fields use "[!field]",
+        // not "[field = false]" (which is an invalid selector -- silently
+        // dropped, not applied, logged as an error in the console).
         { selector: "node[!inCatalog]", style: { "border-style": "dashed", "background-opacity": 0.5, "color": t.ink2 } },
         { selector: "node[?isMore]", style: {
           "shape": "round-rectangle", "background-color": "transparent", "border-width": 1, "border-style": "dashed",
           "border-color": t.hairline, "color": t.ink2, "font-family": "Public Sans, sans-serif", "font-size": 11, "font-weight": 500
         }},
+        // Compound parent = an alternative-courses group ("pick one/N of
+        // these"). Auto-sized by Cytoscape to bound its member nodes; label
+        // pinned to the top edge so it doesn't collide with the members.
+        { selector: ":parent", style: {
+          "shape": "round-rectangle", "background-opacity": 0.08, "border-width": 1, "border-style": "dashed",
+          "padding": "10px",
+          "label": "data(label)", "font-family": "Public Sans, sans-serif", "font-size": 10, "font-weight": 600,
+          "text-valign": "top", "text-halign": "center", "text-margin-y": -4,
+          "color": t.ink2, "border-color": t.edgePrereq, "background-color": t.edgePrereq
+        }},
+        { selector: ":parent[groupKind = 'coreq']", style: { "border-color": t.edgeCoreq, "background-color": t.edgeCoreq } },
         { selector: "edge", style: {
           "curve-style": "bezier", "width": 1.6, "target-arrow-shape": "triangle", "arrow-scale": 0.9,
           "line-color": t.edgePrereq, "target-arrow-color": t.edgePrereq
@@ -517,7 +693,7 @@
 
     state.cy.on("tap", "node", function (evt) {
       var d = evt.target.data();
-      if (d.isMore) return;
+      if (d.isMore || d.isGroup) return;
       select(d.id);
     });
     state.cy.fit(undefined, 40);

@@ -1,5 +1,5 @@
 const MIN_SLOTS_PER_SEMESTER = 5;
-const FIXTURE_URL = "../contracts/fixtures/courses.sample.json";
+const FIXTURE_URL = "../contracts/fixtures/courses.json";
 
 // Term semesters (not transfer) must be named exactly "Fall 2026",
 // "Spring 2027", "Summer 2028", etc.
@@ -17,13 +17,26 @@ const INITIAL_SEMESTERS = [
   { name: "Spring 2030" },
 ];
 
-// The "Normal Schedule" reference panel — a hand-placed recommended plan.
-// Read-only; clicking a tile here copies the course into whatever slot is
-// currently selected in Your Plan. Independent of Your Plan's semester list.
+// The "Normal Schedule" reference panel — the EE curriculum check sheet
+// (August 2026, UH Manoa) transcribed course-for-course. Read-only; clicking
+// a tile here copies the course into whatever slot is currently selected in
+// Your Plan. Independent of Your Plan's semester list.
+//
+// Slots the check sheet itself leaves student-choice-dependent (Major Track
+// Group I/II, Technical Electives, EB, FG, Focus designations, DH-or-DL) use
+// the check sheet's own short labels as their code, not a real specific
+// course — see scripts/build_ece_fixture.py for what each one means.
+//
+// A plan entry is either a course code (string) or an array of course codes
+// that are real either/or alternatives on the sheet (ECE 160 or ECE 110;
+// ECE 345 or MATH 307; Econ 120, 130, or 131) — rendered as one grouped tile
+// cluster, and placing any one of them greys out the whole group, since only
+// one is actually required.
 const TEMPLATE_SEMESTER_LABELS = [
-  "Freshman 1", "Freshman 2",
-  "Sophomore 1", "Sophomore 2",
-  "Junior 1",
+  "Freshman Fall", "Freshman Spring",
+  "Sophomore Fall", "Sophomore Spring",
+  "Junior Fall", "Junior Spring",
+  "Senior Fall", "Senior Spring",
 ];
 const TEMPLATE_PLAN = {
   "Freshman Fall": ["ENG 100", "MATH 241", "CHEM 161", "CHEM 161L", ["ECE 160", "ECE 110"], "H Focus"],
@@ -35,7 +48,6 @@ const TEMPLATE_PLAN = {
   "Senior Fall": ["Major ECE (Group I) #2", "(Lab) ECE (Group I) #2", "Major ECE (Group I) #3", "TE ECE #2", "DH or DL"],
   "Senior Spring": ["ECE 496", "ECE 495", "Major ECE (Group II) #1", "Major ECE (Group II) #2", ["ECON 120", "ECON 130", "ECON 131"], "DS"],
 };
-
 
 let coursesByCode = new Map();
 
@@ -323,6 +335,13 @@ function isCourseScheduled(code) {
   return false;
 }
 
+// True if any member of an either/or alternative group is already scheduled
+// — satisfying one alternative means the group's requirement is met, so the
+// rest should grey out too, not just the one actually placed.
+function isAnyScheduled(codes) {
+  return codes.some(isCourseScheduled);
+}
+
 function renderEmptyTile(slotKey) {
   const tile = document.createElement("div");
   tile.className = "tile empty";
@@ -395,16 +414,16 @@ function renderPlanTile(course, slotKey) {
   return tile;
 }
 
-// Normal Schedule tile: read-only reference. Greys out once that course is
-// scheduled anywhere in Your Plan, otherwise click places it in the
-// selected Your Plan slot.
-function renderTemplateTile(course) {
+// Normal Schedule tile: read-only reference. Greys out once that course (or,
+// for an either/or group, ANY alternative in it) is scheduled anywhere in
+// Your Plan; otherwise click places it in the selected Your Plan slot.
+function renderTemplateTile(course, { greyed = false } = {}) {
   const tile = document.createElement("div");
   tile.className = `tile filled template-tile category-${course.category || "unknown"}`;
   if (course.prereq_parse_status === "failed") {
     tile.classList.add("flagged");
   }
-  if (isCourseScheduled(course.code)) {
+  if (greyed || isCourseScheduled(course.code)) {
     tile.classList.add("scheduled");
   }
   tile.title = "Click to place in the selected Your Plan slot";
@@ -419,6 +438,30 @@ function renderTemplateTile(course) {
   tile.addEventListener("click", () => handleTemplateTileClick(course));
 
   return tile;
+}
+
+// A cluster of real either/or alternatives from the check sheet (e.g.
+// "ECE 160 or ECE 110") — rendered together with "or" dividers so it reads
+// as one choice, not two separate requirements. Placing any one alternative
+// greys out the whole cluster.
+function renderOrGroup(codes) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "or-group";
+  const satisfied = isAnyScheduled(codes);
+
+  codes.forEach((code, i) => {
+    const course = coursesByCode.get(code);
+    if (!course) return;
+    if (i > 0) {
+      const orLabel = document.createElement("span");
+      orLabel.className = "or-group-divider";
+      orLabel.textContent = "or";
+      wrapper.appendChild(orLabel);
+    }
+    wrapper.appendChild(renderTemplateTile(course, { greyed: satisfied }));
+  });
+
+  return wrapper;
 }
 
 function renderLeftSlot(slotKey, container) {
@@ -541,9 +584,13 @@ function renderTemplateBox(label) {
 
   const row = document.createElement("div");
   row.className = "tile-row";
-  const codes = TEMPLATE_PLAN[label] || [];
-  codes.forEach((code) => {
-    const course = coursesByCode.get(code);
+  const entries = TEMPLATE_PLAN[label] || [];
+  entries.forEach((entry) => {
+    if (Array.isArray(entry)) {
+      row.appendChild(renderOrGroup(entry));
+      return;
+    }
+    const course = coursesByCode.get(entry);
     if (!course) return;
     row.appendChild(renderTemplateTile(course));
   });
@@ -640,7 +687,7 @@ async function init() {
     console.error(err);
     renderError(
       "Could not load course fixture. This page fetches " +
-        "contracts/fixtures/courses.sample.json, which browsers block " +
+        "contracts/fixtures/courses.json, which browsers block " +
         "over file:// — serve this repo with a static server (e.g. " +
         "`python -m http.server` from the repo root) and open " +
         "/web/index.html instead."
