@@ -8,7 +8,7 @@ window.PLANNER_CONFIG = {
 
   // How long someone has to spend on a page (with the tab visible) before the
   // popup appears.
-  feedbackDelayMs: 20 * 1000,
+  feedbackDelayMs: 3 * 60 * 1000,
 
   // After "Maybe later", don't show the popup again in this browser for this
   // many days. Clicking through to the form silences it for a year.
