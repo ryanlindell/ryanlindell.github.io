@@ -511,16 +511,17 @@ footer {
 
 .project-card-list {
   list-style: none;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1.25rem, 3vw, 2rem);
 }
 
+/* Image on top, text below; cards in a row stretch to the same height. */
 .project-card-link {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  align-items: stretch;
-  min-height: clamp(220px, 32vw, 360px);
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  height: 100%;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -543,7 +544,8 @@ footer {
 
 .project-card-link-media {
   position: relative;
-  min-height: 200px;
+  aspect-ratio: 16 / 10;
+  max-height: 55vh;
   background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
   overflow: hidden;
 }
@@ -583,13 +585,13 @@ footer {
   flex-direction: column;
   justify-content: center;
   gap: 0.5rem;
-  padding: clamp(1.25rem, 3vw, 2.25rem) clamp(1.25rem, 4vw, 3rem);
+  padding: 1.35rem 1.5rem 1.5rem;
   min-width: 0;
 }
 
 .project-card-link-title {
   margin: 0;
-  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-light);
@@ -612,16 +614,10 @@ footer {
   transition: color 0.2s ease;
 }
 
-@media (max-width: 900px) {
-  .project-card-link {
+/* Phones: one card per row. */
+@media (max-width: 640px) {
+  .project-card-list {
     grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .project-card-link-media {
-    aspect-ratio: 16 / 10;
-    min-height: 0;
-    max-height: 55vh;
   }
 
   .project-card-link-body {
