@@ -52,10 +52,36 @@
   state.mobile = detectMobile();
   rootEl.classList.toggle("is-mobile", state.mobile);
 
+  // Keeps the search sheet the size and position of what's actually visible.
+  // Opening the on-screen keyboard shrinks the *visual* viewport but not the
+  // layout one, so a plain full-screen sheet ends up half under the keyboard,
+  // and the browser's "scroll the focused input into view" then drags it
+  // around -- which is how it used to land on the class list instead of the
+  // search box.
+  function syncSheetToViewport() {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    rootEl.style.setProperty("--vv-top", vv.offsetTop + "px");
+    rootEl.style.setProperty("--vv-h", vv.height + "px");
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncSheetToViewport);
+    window.visualViewport.addEventListener("scroll", syncSheetToViewport);
+  }
+
   function openSidebar() {
+    var sheet = document.getElementById("sidebar");
+    syncSheetToViewport();
     rootEl.classList.add("sidebar-open");
     document.getElementById("open-sidebar").setAttribute("aria-expanded", "true");
-    document.getElementById("search").focus();
+    sheet.scrollTop = 0;
+    document.getElementById("browse").scrollTop = 0;
+    // Must happen inside this tap (iOS won't raise the keyboard otherwise),
+    // and preventScroll stops the browser scrolling to the input while the
+    // sheet is still sliding in.
+    var input = document.getElementById("search");
+    input.focus({ preventScroll: true });
+    input.select(); // last pick is still in the box; typing should replace it
   }
   function closeSidebar() {
     rootEl.classList.remove("sidebar-open");
@@ -310,27 +336,48 @@
   // ---------- search ----------
   var searchInput = document.getElementById("search");
   var resultsEl = document.getElementById("search-results");
+  // On a phone the results replace "worth a look" while they're showing
+  // (styles.css keys off .has-results), so every show/hide goes through here.
+  function setResultsVisible(visible) {
+    resultsEl.hidden = !visible;
+    document.getElementById("sidebar").classList.toggle("has-results", visible);
+  }
   searchInput.addEventListener("input", function () {
     var q = searchInput.value.trim().toLowerCase();
     resultsEl.innerHTML = "";
-    if (!q || !state.graph) { resultsEl.hidden = true; return; }
+    if (!q || !state.graph) { setResultsVisible(false); return; }
     var nodes = state.graph.nodes;
     var matches = Object.keys(nodes).filter(function (c) {
       return nodes[c].in_catalog && (c.toLowerCase().indexOf(q) !== -1 || (nodes[c].title || "").toLowerCase().indexOf(q) !== -1);
     }).slice(0, 8);
-    if (matches.length === 0) { resultsEl.hidden = true; return; }
+    if (matches.length === 0) {
+      // A phone has no room to leave people guessing why nothing appeared.
+      if (state.mobile) {
+        var none = document.createElement("div"); none.className = "no-results";
+        none.textContent = "No courses match “" + searchInput.value.trim() + "”";
+        resultsEl.appendChild(none);
+        setResultsVisible(true);
+      } else setResultsVisible(false);
+      return;
+    }
     matches.forEach(function (c) {
       var b = document.createElement("button");
       var codeSpan = document.createElement("span"); codeSpan.className = "code"; codeSpan.textContent = c + " ";
       var rest = document.createTextNode(nodes[c].title || "");
       b.appendChild(codeSpan); b.appendChild(rest);
-      b.addEventListener("click", function () { select(c); resultsEl.hidden = true; searchInput.value = c; });
+      b.addEventListener("click", function () { select(c); setResultsVisible(false); searchInput.value = c; });
       resultsEl.appendChild(b);
     });
-    resultsEl.hidden = false;
+    setResultsVisible(true);
+  });
+  // Enter (the keyboard's "Search" key on a phone) jumps to the top match.
+  searchInput.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var first = resultsEl.querySelector("button");
+    if (first) { e.preventDefault(); first.click(); }
   });
   document.addEventListener("click", function (e) {
-    if (!resultsEl.contains(e.target) && e.target !== searchInput) resultsEl.hidden = true;
+    if (!resultsEl.contains(e.target) && e.target !== searchInput) setResultsVisible(false);
   });
 
   // ---------- graph rendering ----------

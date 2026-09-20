@@ -221,20 +221,37 @@ header .tagline { color: var(--ink-2); font-size: 0.85rem; margin-inline-start: 
 
 /* Search + "worth a look" becomes a full-screen sheet instead of eating half
    the screen permanently. */
+/* The sheet is pinned to the *visible* viewport (--vv-top / --vv-h, kept in
+   sync by app.js from window.visualViewport), so when the on-screen
+   keyboard opens the sheet shrinks to the space above it instead of sliding
+   under it. The search row never scrolls; only #browse below it does, so
+   the box you're typing in can't be scrolled out of view. */
 .is-mobile #sidebar {
-  position: fixed; inset: 0; z-index: 50; border-right: 0; background: var(--page);
-  padding: 12px 14px calc(16px + env(safe-area-inset-bottom));
-  transform: translateY(100%); visibility: hidden; max-height: none;
+  position: fixed; left: 0; right: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100vh); z-index: 50;
+  border-right: 0; background: var(--page); overflow: hidden; max-height: none; gap: 12px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  transform: translateY(100%); visibility: hidden;
   transition: transform 0.22s ease, visibility 0s linear 0.22s;
 }
 .is-mobile.sidebar-open #sidebar { transform: none; visibility: visible; transition: transform 0.22s ease, visibility 0s; }
+.sheet-top { display: contents; } /* desktop: the search box stays a direct child of the sidebar, as before */
+.is-mobile .sheet-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 0 0 auto; }
+.is-mobile .search-box { display: contents; }
+.is-mobile .search-box input { flex: 1 1 0; min-width: 0; order: 0; font-size: 16px; padding: 12px 14px; } /* under 16px, iOS zooms the page on focus */
 .is-mobile .sidebar-close {
-  display: block; align-self: flex-end; min-height: 40px; padding: 0 14px; font: inherit; font-weight: 600; cursor: pointer;
-  border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--ink);
+  display: block; order: 1; flex: 0 0 auto; min-height: 44px; padding: 0 6px; font: inherit; font-weight: 600; cursor: pointer;
+  border: 0; background: none; color: var(--accent);
 }
-.is-mobile .search-box input { font-size: 16px; padding: 12px 14px; } /* under 16px, iOS zooms the page on focus */
-.is-mobile .search-results { max-height: 50vh; max-height: 50dvh; }
-.is-mobile .search-results button { padding: 12px; }
+/* Results sit in the flow under the input (not floating over the list) and
+   replace "worth a look" while there's a query. */
+.is-mobile .search-results {
+  position: static; order: 2; flex: 0 0 100%; max-height: calc(var(--vv-h, 100vh) - 130px); overflow-y: auto;
+  box-shadow: none; border-radius: 10px;
+}
+.is-mobile .search-results button { padding: 14px 12px; }
+.is-mobile .no-results { padding: 14px 12px; color: var(--ink-2); }
+.is-mobile #browse { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.is-mobile #sidebar.has-results #browse { display: none; }
 .is-mobile .highlight-tabs button { padding: 8px 12px; font-size: 0.8rem; }
 .is-mobile .rank-list button { padding: 12px 4px; }
 

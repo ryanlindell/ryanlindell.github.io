@@ -17,13 +17,15 @@
   </header>
 
   <aside id="sidebar">
-    <button id="close-sidebar" class="sidebar-close" type="button">Close &times;</button>
-    <div class="search-box">
-      <input type="text" id="search" placeholder="Search a course, e.g. ECE 213 or Circuits" autocomplete="off" aria-label="Search courses">
-      <div class="search-results" id="search-results" hidden></div>
+    <div class="sheet-top">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Search a course, e.g. ECE 213 or Circuits" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search courses">
+        <div class="search-results" id="search-results" hidden></div>
+      </div>
+      <button id="close-sidebar" class="sidebar-close" type="button">Cancel</button>
     </div>
 
-    <div>
+    <div id="browse">
       <p class="panel-title">Worth a look</p>
       <div class="highlight-tabs" role="tablist" id="tabs"></div>
       <div id="highlight-panes"></div>
