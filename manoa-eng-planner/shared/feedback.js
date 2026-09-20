@@ -78,11 +78,15 @@
     card.querySelector(".pf-close").addEventListener("click", dismiss);
     card.querySelector(".pf-later").addEventListener("click", dismiss);
     // The link opens the form in a new tab; the popup just goes away behind it.
-    card.querySelector(".pf-primary").addEventListener("click", function () {
+    function openedForm() {
       hideFor(DONE_DAYS);
       track("feedback-click", "Feedback popup: opened the form");
       close();
-    });
+    }
+    var link = card.querySelector(".pf-primary");
+    link.addEventListener("click", openedForm);
+    // A middle-click also opens the link in a new tab, but only fires auxclick.
+    link.addEventListener("auxclick", function (e) { if (e.button === 1) openedForm(); });
     document.addEventListener("keydown", onKey);
 
     document.body.appendChild(card);
