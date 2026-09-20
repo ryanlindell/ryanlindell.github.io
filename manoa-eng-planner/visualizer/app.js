@@ -10,6 +10,7 @@
   // -- see graph.py, which writes both copies together so they can't drift.
   var GRAPH_URL = "data/prereq_graph.json";
   var MAX_PER_COLUMN = 9;
+  var DEFAULT_COURSE = "BIOL 172"; // what the page opens on
 
   // expandedMore: keys are "<focal>|unlock", "<focal>|coreq", or
   // "<focal>|prereq|<level>" -- any truncated "+N more" column a viewer has
@@ -219,8 +220,9 @@
       // An inline style always wins, everywhere, regardless of context.
       document.getElementById("loading").style.display = "none";
       buildHighlights(graph, state.index);
-      // Open on a genuinely deep, real course rather than an empty shell.
-      var opener = pickOpener(graph);
+      // Open on DEFAULT_COURSE; if it ever drops out of the catalog data, fall
+      // back to a genuinely deep, real course rather than an empty shell.
+      var opener = graph.nodes[DEFAULT_COURSE] ? DEFAULT_COURSE : pickOpener(graph);
       select(opener);
     })
     .catch(function (err) {
