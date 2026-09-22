@@ -31,6 +31,8 @@
         <p class="page-hero-lead">Write-ups for individual builds. Open a project to read the full story.</p>
       </header>
 
+      <div class="project-filter" id="project-filter" role="group" aria-label="Filter projects by tag" hidden></div>
+
       <nav class="project-card-bar" aria-label="Project write-ups">
         <ul class="project-card-list">
           <li>
@@ -47,6 +49,12 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">MBTA poster</h3>
                 <p class="project-card-link-meta">Live Green Line updates · C++</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Hardware</li>
+                  <li class="project-tag">Embedded</li>
+                  <li class="project-tag">ESP32</li>
+                  <li class="project-tag">C++</li>
+                </ul>
                 <span class="project-card-link-cta">View project <span aria-hidden="true">→</span></span>
               </div>
             </a>
@@ -65,6 +73,13 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">Bad Apple Box</h3>
                 <p class="project-card-link-meta">Bad Apple on OLED · ESP32</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Hardware</li>
+                  <li class="project-tag">Embedded</li>
+                  <li class="project-tag">ESP32</li>
+                  <li class="project-tag">C++</li>
+                  <li class="project-tag">Python</li>
+                </ul>
                 <span class="project-card-link-cta">View project <span aria-hidden="true">→</span></span>
               </div>
             </a>
@@ -83,6 +98,12 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">DPR Map</h3>
                 <p class="project-card-link-meta">Kailua District Park signs · map</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Software</li>
+                  <li class="project-tag">HTML/JS</li>
+                  <li class="project-tag">Maps</li>
+                  <li class="project-tag">Python</li>
+                </ul>
                 <span class="project-card-link-cta">Open map <span aria-hidden="true">→</span></span>
               </div>
             </a>
@@ -102,6 +123,12 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">Mānoa Engineering Planner</h3>
                 <p class="project-card-link-meta">UH Mānoa course catalog · degree planner &amp; prereq graph</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Software</li>
+                  <li class="project-tag">HTML/JS</li>
+                  <li class="project-tag">Data visualization</li>
+                  <li class="project-tag">Python</li>
+                </ul>
                 <span class="project-card-link-cta">Open planner <span aria-hidden="true">→</span></span>
               </div>
             </a>
@@ -120,6 +147,13 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">SCEL Solar Data Visualization</h3>
                 <p class="project-card-link-meta">Oahu solar, wind &amp; the duck curve · EIA + NREL data</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Software</li>
+                  <li class="project-tag">HTML/JS</li>
+                  <li class="project-tag">Data visualization</li>
+                  <li class="project-tag">Power systems</li>
+                  <li class="project-tag">Python</li>
+                </ul>
                 <span class="project-card-link-cta">Open visualization <span aria-hidden="true">→</span></span>
               </div>
             </a>
@@ -138,13 +172,20 @@
               <div class="project-card-link-body">
                 <h3 class="project-card-link-title">Philosophy Map</h3>
                 <p class="project-card-link-meta">Philosopher influence graph · React + Cytoscape</p>
+                <ul class="project-tags" aria-label="Tags">
+                  <li class="project-tag">Software</li>
+                  <li class="project-tag">React</li>
+                  <li class="project-tag">TypeScript</li>
+                  <li class="project-tag">Data visualization</li>
+                </ul>
                 <span class="project-card-link-cta">Open map <span aria-hidden="true">→</span></span>
               </div>
             </a>
           </li>
           <!--
             To add a project: copy the whole <li>…</li>, set href, image src/alt,
-            title, meta, and keep image under a folder like mbta/ or assets/.
+            title, meta, tags, and keep image under a folder like mbta/ or assets/.
+            The tag filter above the list is built from the .project-tag items.
           -->
         </ul>
       </nav>
@@ -158,5 +199,6 @@
   </footer>
 
   <script src="js/main.js" defer></script>
+  <script src="js/projects.js" defer></script>
 </body>
 </html>
