@@ -680,6 +680,83 @@ footer {
   border-color: var(--primary-color);
 }
 
+.project-filter-group {
+  position: relative;
+}
+
+.project-filter-toggle.is-active {
+  color: #0f172a;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* A small chevron drawn with borders (the "▾" glyph is tiny in some fonts). */
+.project-filter-caret {
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin: 0 0.1rem 0.2em 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease, margin 0.2s ease;
+}
+
+.project-filter-toggle[aria-expanded="true"] .project-filter-caret {
+  transform: rotate(225deg);
+  margin-bottom: -0.1em;
+}
+
+.project-filter-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.project-filter-menu[hidden] {
+  display: none;
+}
+
+.project-filter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-dark);
+  background: transparent;
+}
+
+.project-filter-item:hover {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-light);
+}
+
+.project-filter-item:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.project-filter-item[aria-pressed="true"] {
+  color: var(--primary-color);
+  background: rgba(96, 165, 250, 0.14);
+}
+
 .project-filter-count {
   margin-left: 0.35rem;
   opacity: 0.65;
