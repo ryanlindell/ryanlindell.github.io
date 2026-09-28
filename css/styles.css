@@ -512,11 +512,19 @@ footer {
 .project-card-list {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.25rem, 3vw, 2rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
 }
 
-/* Image on top, text below; cards in a row stretch to the same height. */
+/* Tablets and narrow laptops: two cards per row. */
+@media (max-width: 1000px) {
+  .project-card-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Image on top, text below; cards in a row stretch to the same height.
+   Three per row on wide screens, two on tablets, one on phones. */
 .project-card-link {
   display: grid;
   grid-template-columns: 1fr;
@@ -591,7 +599,7 @@ footer {
 
 .project-card-link-title {
   margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  font-size: clamp(1.15rem, 1.7vw, 1.4rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-light);
@@ -638,6 +646,36 @@ footer {
   color: var(--primary-color);
   background: rgba(96, 165, 250, 0.14);
   border-color: rgba(96, 165, 250, 0.4);
+}
+
+/* Status tag ("In progress"): amber so it reads apart from the topic tags. */
+.project-tag--status {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.project-tag--status.is-match {
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
+/* In-progress cards have nothing to open yet, so no hover lift. */
+.project-card-link--static:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transform: none;
+}
+
+.project-card-link-media-placeholder {
+  display: grid;
+  place-items: center;
+}
+
+.project-card-link-media-placeholder i {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  color: rgba(148, 163, 184, 0.75);
 }
 
 .project-filter {
