@@ -30,7 +30,7 @@ html {
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   color: var(--text-dark);
   background-color: var(--light-bg);
@@ -59,6 +59,7 @@ a:hover {
 }
 
 h1, h2, h3 {
+  font-family: 'Space Grotesk', 'Inter', 'Segoe UI', system-ui, sans-serif;
   margin-bottom: 15px;
   line-height: 1.2;
 }
@@ -147,10 +148,25 @@ nav a[aria-current="page"] {
 
 /* Hero Section */
 #hero {
+  position: relative;
+  overflow: hidden;
   background-color: var(--dark-bg);
   color: var(--text-light);
   padding: 80px 0 100px;
   text-align: left;
+}
+
+/* Drifting-points background (js/hero-network.js); sits behind the hero content. */
+.hero-network {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#hero .hero-layout {
+  position: relative;
 }
 
 .hero-layout {
@@ -257,6 +273,133 @@ nav a[aria-current="page"] {
   border-radius: 20px;
   font-size: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* "Focus & tools" as an oscilloscope (js/skills-scope.js): the skills sit in
+   three colour-coded groups, and a waveform for whichever skill is selected
+   runs edge to edge across the section underneath them. */
+#about {
+  padding-bottom: 56px;
+}
+
+#about [data-group="focus"] { --c: 248, 113, 113; }
+#about [data-group="hardware"] { --c: 251, 191, 36; }
+#about [data-group="software"] { --c: 96, 165, 250; }
+
+.skills-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.skill-groups {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.skill-group {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.skill-group dt {
+  font-family: 'JetBrains Mono', 'Consolas', 'SF Mono', 'Menlo', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(var(--c), 0.85);
+}
+
+.skill-group dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-chip {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--text-light);
+  background-color: var(--surface);
+  border: 1px solid rgba(var(--c), 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.skill-chip:hover,
+.skill-chip.is-hot {
+  border-color: rgba(var(--c), 0.95);
+  background-color: #2b2b42;
+  box-shadow: 0 0 0 1px rgba(var(--c), 0.35), 0 0 18px rgba(var(--c), 0.35);
+}
+
+.skill-chip:focus-visible {
+  outline: 2px solid rgb(var(--c));
+  outline-offset: 2px;
+}
+
+/* A pinned skill (clicked or tapped) is filled in. */
+.skill-chip[aria-pressed="true"] {
+  background-color: rgba(var(--c), 0.22);
+}
+
+/* The scope spans the full width of the page and fades out at both edges. */
+.skills-scope {
+  margin-top: 36px;
+}
+
+.skills-scope canvas {
+  display: block;
+  width: 100%;
+  height: 200px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 min(180px, 16%), #000 calc(100% - min(180px, 16%)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 min(180px, 16%), #000 calc(100% - min(180px, 16%)), transparent);
+}
+
+.skills-scope-readout {
+  margin: 14px auto 0;
+  padding: 0 20px;
+  max-width: 1200px;
+  min-height: 2.6em;
+  text-align: center;
+  font-family: 'JetBrains Mono', 'Consolas', 'SF Mono', 'Menlo', monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.skills-scope-name {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--c, 148, 163, 184));
+  margin-right: 0.6em;
+}
+
+@media (max-width: 640px) {
+  .skill-group {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-chip {
+    padding: 6px 11px;
+    font-size: 0.85rem;
+  }
+
+  .skills-scope canvas {
+    height: 160px;
+  }
+
+  .skills-scope-name {
+    display: block;
+    margin: 0 0 2px;
+  }
 }
 
 /* Projects Section */
@@ -502,6 +645,25 @@ footer {
 
 .breadcrumb-current {
   color: var(--text-dark);
+}
+
+/* Projects page background (js/projects-contours.js): a canvas fixed to the
+   viewport. clip-path keeps it inside <main>, so it never shows over the footer. */
+.page-main--contours {
+  position: relative;
+  clip-path: inset(0);
+}
+
+.projects-contours {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.page-main--contours > .container {
+  position: relative;
 }
 
 /* Project index: large image cards */
@@ -915,7 +1077,7 @@ footer {
 
 /* Inline code */
 .project-writeup code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.88em;
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid var(--page-edge);
@@ -940,7 +1102,7 @@ footer {
 }
 
 .project-code pre code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.84rem;
   line-height: 1.6;
   color: var(--text-dark);
@@ -961,7 +1123,7 @@ footer {
 }
 
 .project-code figcaption .project-code-file {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   color: var(--primary-color);
 }
 
