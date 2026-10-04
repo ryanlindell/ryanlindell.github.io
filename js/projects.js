@@ -9,7 +9,7 @@
   // Tags that go in a pulldown instead of getting their own button. The key is
   // the pulldown's name; picking its "All" entry filters by that tag itself.
   var GROUPS = {
-    Software: ['Python', 'HTML/JS', 'C++', 'React', 'TypeScript']
+    Software: ['Python', 'HTML/JS', 'C++', 'React', 'TypeScript', 'Supabase/PostgreSQL']
   }
 
   var cards = [].slice.call(list.children).filter(function (li) {

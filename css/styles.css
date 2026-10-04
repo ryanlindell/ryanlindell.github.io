@@ -963,6 +963,101 @@ footer {
   font-variant-numeric: tabular-nums;
 }
 
+/* Line drawings standing in for photos on projects that don't have one yet:
+   blueprint-style figures on a faint grid, each with one quiet moving part. */
+.project-card-link-media--art {
+  background-color: #0f172a;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  background-size: 20px 20px, 20px 20px, auto;
+  background-position: center;
+}
+
+.project-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.project-art .art-line {
+  fill: none;
+  stroke: rgba(203, 213, 225, 0.55);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.project-art .art-thick { stroke-width: 2.5; }
+
+.project-art .art-dim {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.3);
+  stroke-width: 1;
+}
+
+.project-art .art-dash { stroke-dasharray: 4 4; }
+
+.project-art .art-accent {
+  fill: none;
+  stroke: var(--primary-color);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.project-art .art-fill {
+  fill: var(--primary-color);
+  stroke: none;
+}
+
+.project-art .art-bar {
+  fill: rgba(96, 165, 250, 0.14);
+  stroke: rgba(96, 165, 250, 0.35);
+}
+
+.project-art .art-text {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  fill: rgba(148, 163, 184, 0.75);
+}
+
+.project-art .art-spin {
+  transform-box: view-box;
+  transform-origin: 160px 90px;
+  animation: art-spin 16s linear infinite;
+}
+
+.project-art .art-spin--fan {
+  transform-origin: 160px 78px;
+  animation-duration: 3s;
+}
+
+.project-art .art-wave { animation: art-fade 2.4s ease-out infinite backwards; }
+.project-art .art-blink { animation: art-fade 2s ease-in-out infinite; }
+
+.project-art .art-rudder {
+  transform-box: view-box;
+  transform-origin: 160px 134px;
+  animation: art-rudder 4s ease-in-out infinite alternate;
+}
+
+.project-art .art-march {
+  stroke-dasharray: 4 4;
+  animation: art-march 1.2s linear infinite;
+}
+
+@keyframes art-spin { to { transform: rotate(360deg); } }
+@keyframes art-fade { 0%, 100% { opacity: 0; } 30% { opacity: 0.9; } }
+@keyframes art-rudder { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+@keyframes art-march { to { stroke-dashoffset: -8; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .project-art * { animation: none !important; }
+  .project-art .art-current { display: none; }
+}
+
 /* Phones: one card per row. */
 @media (max-width: 640px) {
   .project-card-list {
